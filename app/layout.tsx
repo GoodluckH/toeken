@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import "@/app/globals.css";
 import { Providers } from "@/app/providers";
+import { NavBar } from "./components/NavBar";
 
 export const metadata: Metadata = {
   title: "Farcaster Frames v2 Demo",
@@ -16,7 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <NavBar />
+          {children}
+        </Providers>
       </body>
     </html>
   );

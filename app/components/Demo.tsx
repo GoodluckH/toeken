@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useContext } from "react";
 import sdk, { type FrameContext } from "@farcaster/frame-sdk";
 import Image from "next/image";
 import FeetImage from "@/images/feet-1.jpg";
@@ -12,11 +12,15 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { config } from "@/components/providers/WagmiProvider";
+import { GameContext, SuckingStatus } from "../providers";
 
 export default function Demo() {
+  const [error, setError] = useState<object | null>(null);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<FrameContext>();
+  const { suckingStatus, suck } = useContext(GameContext);
   const [isContextOpen, setIsContextOpen] = useState(false);
+  const { connect } = useConnect();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -45,7 +49,7 @@ export default function Demo() {
     isError: isSignTypedError,
     isPending: isSignTypedPending,
   } = useSignTypedData();
-  const { connect } = useConnect();
+
   useEffect(() => {
     const load = async () => {
       setContext(await sdk.context);
@@ -56,6 +60,7 @@ export default function Demo() {
       load();
     }
   }, [isSDKLoaded]);
+
   const sendTx = useCallback(() => {
     sendTransaction(
       {
@@ -105,56 +110,57 @@ export default function Demo() {
 
   return (
     <div className="w-[300px] mx-auto py-4 px-2">
-      <h1 className="text-2xl font-bold text-center mb-4">Frames v2 Demo</h1>
+      <h1 className="text-xl font-bold text-center mb-4 italic">
+        level 1: pinky toe
+      </h1>
 
       <Image src={FeetImage} alt="feet" width={300} />
-      <div className="mb-4">
-        <h2 className="font-2xl font-bold">Context</h2>
+      <div className="mt-10 flex flex-col items-center w-full">
+        {suckingStatus === SuckingStatus.NotSucked
+          ? "you suck"
+          : suckingStatus === SuckingStatus.Sucked
+          ? "you sucked!!!!!!!!!"
+          : ""}
         <button
-          onClick={toggleContext}
-          className="flex items-center gap-2 transition-colors"
+          onClick={sendTx}
+          disabled={suckingStatus === SuckingStatus.Sucking}
+          className={`px-4 py-2 text-white rounded-lg ${
+            suckingStatus === SuckingStatus.Idle
+              ? "bg-blue-500 active:bg-blue-700"
+              : suckingStatus === SuckingStatus.Sucking
+              ? "bg-neutral-500 active:bg-neutral-700"
+              : suckingStatus === SuckingStatus.NotSucked
+              ? "bg-red-500 active:bg-red-700"
+              : "bg-green-500 active:bg-green-700"
+          }`}
         >
-          <span
-            className={`transform transition-transform ${
-              isContextOpen ? "rotate-90" : ""
-            }`}
-          >
-            ➤
-          </span>
-          Tap to expand
+          {suckingStatus === SuckingStatus.Idle
+            ? "give it a suck (1,000 toeken)"
+            : suckingStatus === SuckingStatus.Sucking
+            ? "sucking in progress..."
+            : suckingStatus === SuckingStatus.NotSucked
+            ? "try again (1,000 toeken)"
+            : "suck the next one (1,000 toeken)"}
         </button>
-
-        {isContextOpen && (
-          <div className="p-4 mt-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <pre className="font-mono text-xs whitespace-pre-wrap break-words max-w-[260px] overflow-x-">
-              {JSON.stringify(context, null, 2)}
-            </pre>
-          </div>
-        )}
-
         <div>
-          <h2 className="font-2xl font-bold">Wallet</h2>
-
-          {address && (
-            <div className="my-2 text-xs">
-              Address: <pre className="inline">{address}</pre>
-            </div>
-          )}
-
-          <div className="mb-4">
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-              onClick={() =>
-                isConnected
-                  ? disconnect()
-                  : connect({ connector: config.connectors[0] })
-              }
-            >
-              {isConnected ? "Disconnect" : "Connect"}
-            </button>
-          </div>
-          {isConnected && (
+          {!isConnected && (
             <>
+              <button
+                className="px-4 py-2 text-white rounded-lg mt-10"
+                onClick={async () => {
+                  if (isConnected) {
+                    disconnect();
+                  } else {
+                    try {
+                      await connect({ connector: config.connectors[0] });
+                    } catch (error) {
+                      setError(error);
+                    }
+                  }
+                }}
+              >
+                {isConnected ? "Disconnect" : "Connect"}
+              </button>
               <div className="mb-4">
                 <button
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg"

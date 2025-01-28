@@ -2,7 +2,10 @@
 
 import dynamic from "next/dynamic";
 import usePartySocket from "partysocket/react";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { YouTubeAudioLoop } from "./components/Audio";
+import { AudioContext } from "./providers";
+import { Help } from "./components/Help";
 
 const Demo = dynamic(() => import("./components/Demo"), {
   ssr: false,
@@ -11,9 +14,10 @@ const Demo = dynamic(() => import("./components/Demo"), {
 export default function Home() {
   const [event, setEvent] = useState(null);
   const [data, setData] = useState(null);
+  const { showHelp, setShowHelp } = useContext(AudioContext);
   const socket = usePartySocket({
     // host defaults to the current URL if not set
-    host: "toeken-party.goodluckh.partykit.dev",
+    host: "wss://toeken-party.goodluckh.partykit.dev",
 
     // we could use any room name here
     room: "main",
@@ -32,9 +36,8 @@ export default function Home() {
   });
   return (
     <main className="min-h-screen flex flex-col p-4">
-      {event && <pre>{JSON.stringify(event, null, 2)}</pre>}
-      {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
-      <Demo />
+      <YouTubeAudioLoop videoId="kmuLGCgSPEc" />
+      {showHelp ? <Help /> : <Demo />}
     </main>
   );
 }
